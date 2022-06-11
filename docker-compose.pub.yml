@@ -1,0 +1,48 @@
+version: "3"
+
+services:
+  frontend:
+    image: mrdrprof/time-app-frontend-dev:0.1
+    restart: always
+    ports:
+      - 3000:3000
+
+  api:
+    image: mrdrprof/time-app-api-dev:0.1
+    restart: always
+    ports:
+      - 5555:5000
+    # wait only for creation of mysql container (mysql init process takes time)
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      MYSQL_HOST: mysql
+      MYSQL_USER: root
+      MYSQL_PORT: "3306"
+      MYSQL_PASSWORD: password
+      MYSQL_DB: time_db
+
+  mysql:
+    image: mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: time_db
+    volumes:
+      - mysql_data_pub:/var/lib/mysql
+    healthcheck:
+      test: [ 'CMD', 'mysqladmin', 'ping', '-u', 'root' ]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8888:8080
+
+volumes:
+  # mysql_data direcotry will be managed by docker exact location is /var/lib/docker/volumes
+  mysql_data_pub:
